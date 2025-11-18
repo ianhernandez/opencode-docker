@@ -7,7 +7,7 @@ services:
     environment:
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
     volumes:
-      - ./workspace:/workspace
+      - workspace-data:/workspace
     ports:
       - 4096
     networks:
@@ -20,12 +20,14 @@ services:
       dockerfile: Dockerfile.preview
     container_name: preview
     volumes:
-      - ./workspace:/usr/share/nginx/html:ro
+      - workspace-data:/usr/share/nginx/html:ro
     ports:
       - 80
     networks:
       - dokploy-network
     restart: unless-stopped
+    depends_on:
+      - opencode
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.opencode-preview.rule=Host(`preview.yourdomain.com`)"
@@ -42,7 +44,7 @@ services:
       - OPENCODE_URL=http://opencode:4096
       - PORT=3000
     volumes:
-      - ./workspace:/workspace
+      - workspace-data:/workspace
     ports:
       - 3000
     networks:
@@ -56,6 +58,9 @@ services:
       - "traefik.http.routers.opencode-backend.entrypoints=websecure"
       - "traefik.http.routers.opencode-backend.tls.certResolver=letsencrypt"
       - "traefik.http.services.opencode-backend.loadbalancer.server.port=3000"
+
+volumes:
+  workspace-data:
 
 networks:
   dokploy-network:
