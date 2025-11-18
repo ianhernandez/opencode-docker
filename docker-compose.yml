@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   opencode:
     build:
@@ -11,7 +9,9 @@ services:
     volumes:
       - ./workspace:/workspace
     ports:
-      - "4096:4096"
+      - 4096
+    networks:
+      - dokploy-network
     restart: unless-stopped
 
   preview:
@@ -22,8 +22,16 @@ services:
     volumes:
       - ./workspace:/usr/share/nginx/html:ro
     ports:
-      - "8080:80"
+      - 80
+    networks:
+      - dokploy-network
     restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.opencode-preview.rule=Host(`preview.yourdomain.com`)"
+      - "traefik.http.routers.opencode-preview.entrypoints=websecure"
+      - "traefik.http.routers.opencode-preview.tls.certResolver=letsencrypt"
+      - "traefik.http.services.opencode-preview.loadbalancer.server.port=80"
 
   backend:
     build:
@@ -36,7 +44,19 @@ services:
     volumes:
       - ./workspace:/workspace
     ports:
-      - "3000:3000"
+      - 3000
+    networks:
+      - dokploy-network
     depends_on:
       - opencode
     restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.opencode-backend.rule=Host(`api.yourdomain.com`)"
+      - "traefik.http.routers.opencode-backend.entrypoints=websecure"
+      - "traefik.http.routers.opencode-backend.tls.certResolver=letsencrypt"
+      - "traefik.http.services.opencode-backend.loadbalancer.server.port=3000"
+
+networks:
+  dokploy-network:
+    external: true
