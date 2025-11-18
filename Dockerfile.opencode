@@ -1,11 +1,12 @@
 FROM node:20-slim
 
-# Install dependencies
+# Install dependencies including gosu for safe user switching
 RUN apt-get update && apt-get install -y \
   git \
   bash \
   curl \
   ca-certificates \
+  gosu \
   && rm -rf /var/lib/apt/lists/*
 
 # Install OpenCode globally
@@ -25,10 +26,7 @@ RUN mkdir -p /home/node/.local/share/opencode && \
 COPY docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-# Switch to non-root user
-USER node
-
-# Set working directory
+# Set working directory (don't switch to node user - entrypoint will handle it)
 WORKDIR /workspace
 
 # Copy workspace files

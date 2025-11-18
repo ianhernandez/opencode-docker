@@ -235,7 +235,7 @@ docker-compose down -v
 
 ## 🚢 Deployment with Dokploy
 
-This project is ready for deployment with Dokploy:
+This project is ready for deployment with Dokploy with **automatic permission handling**:
 
 1. Push your code to a Git repository
 2. In Dokploy, create a new application
@@ -245,6 +245,16 @@ This project is ready for deployment with Dokploy:
 5. Deploy!
 
 Dokploy will automatically detect the `docker-compose.yml` and deploy all services.
+
+### ✅ Permission Management
+
+The OpenCode container automatically fixes workspace permissions on startup:
+- Container starts as root to fix file ownership
+- Immediately drops to `node` user for security
+- No manual intervention required
+- Works seamlessly with Dokploy's volume mounts
+
+See [`docs/DEPLOYMENT_GUIDE.md`](docs/DEPLOYMENT_GUIDE.md:1) for detailed deployment instructions.
 
 ## 🔧 Customization
 
@@ -279,6 +289,28 @@ Edit [`workspace/opencode.json`](workspace/opencode.json:1) to change OpenCode p
 - Refresh your browser
 - Check OpenCode logs: `docker-compose logs opencode`
 - Verify the workspace volume is mounted correctly
+
+### Permission denied errors
+
+This project includes automatic permission fixing. If you see permission errors:
+
+1. Check logs for permission fix message:
+   ```bash
+   docker-compose logs opencode | grep "Fixing workspace permissions"
+   ```
+
+2. Restart the container to trigger permission fix:
+   ```bash
+   docker-compose restart opencode
+   ```
+
+3. For detailed troubleshooting, see [`docs/DEPLOYMENT_GUIDE.md`](docs/DEPLOYMENT_GUIDE.md:1)
+
+### Technical Details
+
+- **Problem**: Docker bind mounts preserve host file permissions
+- **Solution**: Entrypoint fixes permissions on container startup
+- **Implementation**: See [`docs/PERMISSION_SOLUTIONS.md`](docs/PERMISSION_SOLUTIONS.md:1) for full analysis
 
 ## 📚 Resources
 
