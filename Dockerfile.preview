@@ -1,0 +1,7 @@
+FROM nginx:alpine
+
+# Copy workspace content to nginx html directory
+COPY ./workspace /usr/share/nginx/html
+
+# Expose port 80
+EXPOSE 80

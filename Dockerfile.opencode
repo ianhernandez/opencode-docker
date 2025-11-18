@@ -1,0 +1,44 @@
+FROM node:20-slim
+
+# Install dependencies
+RUN apt-get update && apt-get install -y \
+  git \
+  bash \
+  curl \
+  ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
+
+# Install OpenCode globally
+RUN npm install -g opencode-ai
+
+# Create workspace with proper ownership
+RUN mkdir -p /workspace && chown node:node /workspace
+
+# Create OpenCode directories
+RUN mkdir -p /home/node/.local/share/opencode && \
+  mkdir -p /home/node/.local/state && \
+  mkdir -p /home/node/.config/opencode && \
+  chown -R node:node /home/node/.local && \
+  chown -R node:node /home/node/.config
+
+# Copy entrypoint script
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+# Switch to non-root user
+USER node
+
+# Set working directory
+WORKDIR /workspace
+
+# Copy workspace files
+COPY --chown=node:node ./workspace/ .
+
+# Expose OpenCode API port
+EXPOSE 4096
+
+# Use entrypoint to set up auth at runtime
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+
+# Start OpenCode server
+CMD ["opencode", "serve", "--hostname", "0.0.0.0", "--port", "4096"]

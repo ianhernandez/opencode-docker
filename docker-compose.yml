@@ -1,0 +1,42 @@
+version: "3.9"
+
+services:
+  opencode:
+    build:
+      context: .
+      dockerfile: Dockerfile.opencode
+    container_name: opencode-server
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+    volumes:
+      - ./workspace:/workspace
+    ports:
+      - "4096:4096"
+    restart: unless-stopped
+
+  preview:
+    build:
+      context: .
+      dockerfile: Dockerfile.preview
+    container_name: preview
+    volumes:
+      - ./workspace:/usr/share/nginx/html:ro
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: backend
+    environment:
+      - OPENCODE_URL=http://opencode:4096
+      - PORT=3000
+    volumes:
+      - ./workspace:/workspace
+    ports:
+      - "3000:3000"
+    depends_on:
+      - opencode
+    restart: unless-stopped
