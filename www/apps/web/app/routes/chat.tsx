@@ -223,7 +223,20 @@ export default function Chat() {
             >
               <div className="font-medium text-gray-900 truncate">{session.title}</div>
               <div className="text-xs text-gray-500 mt-1">
-                {new Date(session.createdAt).toLocaleDateString()}
+                {(() => {
+                  try {
+                    // OpenCode might return Unix timestamp (number) or ISO string
+                    const date = typeof session.createdAt === 'number'
+                      ? new Date(session.createdAt)
+                      : new Date(session.createdAt);
+
+                    return !isNaN(date.getTime())
+                      ? date.toLocaleDateString()
+                      : 'Recently';
+                  } catch {
+                    return 'Recently';
+                  }
+                })()}
               </div>
             </a>
           ))}
