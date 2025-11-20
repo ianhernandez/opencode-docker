@@ -64,7 +64,7 @@ export async function action({ request }: Route.ActionArgs) {
       const response = await sendMessage(sessionId, {
         model: {
           providerID: 'anthropic',
-          modelID: 'claude-sonnet-4',
+          modelID: 'claude-haiku-4-5',
         },
         agent: 'build',
         parts: [{ type: 'text', text: message }],
@@ -310,7 +310,7 @@ export default function Chat() {
                   type="text"
                   name="message"
                   placeholder="Type your message..."
-                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 text-gray-900"
                   disabled={isSubmitting || isStreaming}
                   autoComplete="off"
                 />
