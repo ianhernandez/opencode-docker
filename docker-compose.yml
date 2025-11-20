@@ -117,6 +117,7 @@ services:
       - "3000"
     environment:
       - API_URL=http://api:9999
+      - OPENCODE_URL=http://opencode:4096
     networks:
       - dokploy-network
     depends_on:
