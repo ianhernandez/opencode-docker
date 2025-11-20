@@ -60,16 +60,24 @@ export async function action({ request }: Route.ActionArgs) {
     const sessionId = formData.get('sessionId') as string;
     const message = formData.get('message') as string;
 
-    const response = await sendMessage(sessionId, {
-      model: {
-        providerID: 'openai',
-        modelID: 'gpt-4.1',
-      },
-      agent: 'build',
-      parts: [{ type: 'text', text: message }],
-    });
+    try {
+      const response = await sendMessage(sessionId, {
+        model: {
+          providerID: 'anthropic',
+          modelID: 'claude-sonnet-4',
+        },
+        agent: 'build',
+        parts: [{ type: 'text', text: message }],
+      });
 
-    return { type: 'message-sent', message: response };
+      return { type: 'message-sent', message: response };
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      return {
+        type: 'error',
+        error: error instanceof Error ? error.message : 'Failed to send message'
+      };
+    }
   }
 
   if (intent === 'abort') {
@@ -252,8 +260,8 @@ export default function Chat() {
                 >
                   <div
                     className={`max-w-2xl px-4 py-3 rounded-lg ${msg.info.role === 'user'
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-white border border-gray-200 text-gray-900'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white border border-gray-200 text-gray-900'
                       }`}
                   >
                     {msg.parts.map((part, idx) => {

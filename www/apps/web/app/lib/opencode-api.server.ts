@@ -42,11 +42,21 @@ async function opencodeRequest<T>(
   });
 
   if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`OpenCode API Error: ${response.status} - ${error}`);
+    let errorMessage = `OpenCode API Error: ${response.status}`;
+    try {
+      const error = await response.text();
+      errorMessage += ` - ${error}`;
+    } catch {
+      // Ignore if we can't read the error body
+    }
+    throw new Error(errorMessage);
   }
 
-  return response.json();
+  try {
+    return await response.json();
+  } catch (error) {
+    throw new Error(`Failed to parse OpenCode API response: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
 }
 
 /**

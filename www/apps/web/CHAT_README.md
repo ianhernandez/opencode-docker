@@ -106,15 +106,17 @@ environment:
   - OPENCODE_URL=http://opencode:4096
 ```
 
-## 📊 AI Agents
+## 📊 AI Configuration
 
-The chat uses OpenCode agents:
+**Model**: Anthropic Claude Sonnet 4
+- Uses your existing `ANTHROPIC_API_KEY` from `.env`
+- No additional setup required
 
-- **build**: Code implementation and file operations
-- **plan**: Architecture and planning
-- **general**: General conversation
+**Agent**: Build
+- Specialized for code implementation and file operations
+- Other agents: `plan` (architecture), `general` (conversation)
 
-(Currently hardcoded to "build" - can be made configurable)
+> **Note**: To use other providers like OpenAI, you need to add their API keys to OpenCode using `opencode auth login` or environment variables. See [OpenCode Providers Documentation](https://docs.opencode.ai/config/providers).
 
 ## 🔍 Debugging
 

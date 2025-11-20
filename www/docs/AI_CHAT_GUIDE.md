@@ -261,6 +261,35 @@ environment:
 
 ## Troubleshooting
 
+### ProviderModelNotFoundError
+
+**Error**: `ProviderModelNotFoundError: providerID: "openai", modelID: "gpt-4.1"`
+
+**Cause**: OpenCode doesn't have the specified AI provider configured.
+
+**Solution**: The chat is configured to use **Anthropic Claude Sonnet 4** (already set up in your `.env`). If you want to use other providers:
+
+1. Add the provider's API key:
+   ```bash
+   # For OpenAI
+   opencode auth login
+   # Select OpenAI and enter your key
+   
+   # Or add to docker-compose.yml:
+   environment:
+     - OPENAI_API_KEY=${OPENAI_API_KEY}
+   ```
+
+2. Update the model in [`chat.tsx`](../apps/web/app/routes/chat.tsx:65):
+   ```typescript
+   model: {
+     providerID: 'openai',  // or 'anthropic', 'google', etc.
+     modelID: 'gpt-4o',     // check available models
+   }
+   ```
+
+See [OpenCode Providers Documentation](https://docs.opencode.ai/config/providers) for all supported providers.
+
 ### OpenCode not responding
 
 Check OpenCode is running:
@@ -276,6 +305,17 @@ Verify event stream URL:
 # Should return text/event-stream
 curl -H "Accept: text/event-stream" \
   "http://localhost:4096/event?directory=/workspace"
+```
+
+### JSON Parse Error
+
+**Error**: `SyntaxError: Unexpected end of JSON input`
+
+**Cause**: OpenCode returned an error instead of valid JSON.
+
+**Solution**: This is now handled with try-catch blocks. Check OpenCode logs to see the actual error:
+```bash
+docker-compose logs opencode
 ```
 
 ### Messages not appearing
