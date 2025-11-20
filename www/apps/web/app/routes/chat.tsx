@@ -64,7 +64,7 @@ export async function action({ request }: Route.ActionArgs) {
       const response = await sendMessage(sessionId, {
         model: {
           providerID: 'anthropic',
-          modelID: 'claude-haiku-4-5',
+          modelID: 'claude-haiku-4-5-20251001',
         },
         agent: 'build',
         parts: [{ type: 'text', text: message }],
