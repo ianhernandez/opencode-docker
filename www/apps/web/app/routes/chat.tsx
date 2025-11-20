@@ -95,6 +95,8 @@ export default function Chat() {
   const navigation = useNavigation();
   const [messages, setMessages] = useState<MessageWithParts[]>(initialMessages);
   const [isStreaming, setIsStreaming] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isChatMinimized, setIsChatMinimized] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Update messages when loader data changes
@@ -182,7 +184,7 @@ export default function Chat() {
 
   // Handle session creation redirect
   useEffect(() => {
-    if (actionData?.type === 'session-created') {
+    if (actionData?.type === 'session-created' && actionData.session) {
       window.location.href = `/chat?session=${actionData.session.id}`;
     }
   }, [actionData]);
@@ -190,11 +192,32 @@ export default function Chat() {
   const isSubmitting = navigation.state === 'submitting';
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      {/* Sidebar */}
-      <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
-        <div className="p-4 border-b border-gray-200">
+    <div className="relative h-screen overflow-hidden">
+      {/* Full-screen iframe preview */}
+      <iframe
+        src="http://opencode-service-ajylkr-622128-208-113-131-145.traefik.me/"
+        className="absolute inset-0 w-full h-full border-0"
+        title="Preview"
+      />
+
+      {/* Collapsible Sidebar */}
+      <div
+        className={`absolute top-0 left-0 h-full bg-white border-r border-gray-200 shadow-2xl transition-transform duration-300 ease-in-out z-20 ${
+          isSidebarCollapsed ? '-translate-x-full' : 'translate-x-0'
+        }`}
+        style={{ width: '256px' }}
+      >
+        <div className="p-4 border-b border-gray-200 flex items-center justify-between">
           <h1 className="text-xl font-bold text-gray-900">OpenCode Chat</h1>
+          <button
+            onClick={() => setIsSidebarCollapsed(true)}
+            className="p-1 hover:bg-gray-100 rounded"
+            title="Collapse sidebar"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
         </div>
 
         {/* New Chat Button */}
@@ -243,107 +266,152 @@ export default function Chat() {
         </div>
       </div>
 
-      {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col">
-        {currentSession ? (
-          <>
-            {/* Chat Header */}
-            <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">{currentSession.title}</h2>
-              {isStreaming && (
-                <Form method="post">
-                  <input type="hidden" name="intent" value="abort" />
-                  <input type="hidden" name="sessionId" value={currentSession.id} />
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
-                  >
-                    Stop Generating
-                  </button>
-                </Form>
-              )}
-            </div>
+      {/* Sidebar toggle button (when collapsed) */}
+      {isSidebarCollapsed && (
+        <button
+          onClick={() => setIsSidebarCollapsed(false)}
+          className="absolute top-4 left-4 z-30 p-2 bg-white rounded-lg shadow-lg hover:bg-gray-50 transition-colors"
+          title="Open sidebar"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      )}
 
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-4">
-              {messages.map((msg) => (
-                <div
-                  key={msg.info.id}
-                  className={`flex ${msg.info.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div
-                    className={`max-w-2xl px-4 py-3 rounded-lg ${msg.info.role === 'user'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-white border border-gray-200 text-gray-900'
-                      }`}
-                  >
-                    {msg.parts.map((part, idx) => {
-                      if (part.type === 'text') {
-                        return (
-                          <div key={idx} className="whitespace-pre-wrap">
-                            {part.text}
-                          </div>
-                        );
-                      }
-                      if (part.type === 'tool') {
-                        return (
-                          <details key={idx} className="mt-2 text-sm opacity-75">
-                            <summary className="cursor-pointer">Used tool: {part.name}</summary>
-                            <pre className="mt-2 text-xs overflow-auto">
-                              {JSON.stringify(part.input, null, 2)}
-                            </pre>
-                          </details>
-                        );
-                      }
-                      return null;
-                    })}
-                  </div>
-                </div>
-              ))}
-              {isStreaming && (
-                <div className="flex justify-start">
-                  <div className="bg-white border border-gray-200 text-gray-900 px-4 py-3 rounded-lg">
-                    <div className="flex space-x-2">
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                    </div>
-                  </div>
-                </div>
-              )}
-              <div ref={messagesEndRef} />
-            </div>
-
-            {/* Message Input */}
-            <div className="bg-white border-t border-gray-200 p-6">
-              <Form method="post" className="flex space-x-4">
-                <input type="hidden" name="intent" value="send-message" />
+      {/* Floating Chat Window */}
+      <div
+        className={`absolute z-10 bg-white rounded-lg shadow-2xl transition-all duration-300 ${
+          isChatMinimized ? 'bottom-4 right-4 w-80' : 'bottom-8 right-8 w-[600px] h-[700px]'
+        }`}
+        style={{
+          maxWidth: 'calc(100vw - 64px)',
+          maxHeight: 'calc(100vh - 64px)',
+        }}
+      >
+        {/* Chat Header */}
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-3 rounded-t-lg flex items-center justify-between">
+          <div className="flex items-center space-x-3 flex-1 min-w-0">
+            <h2 className="text-base font-semibold truncate">
+              {currentSession ? currentSession.title : 'OpenCode Chat'}
+            </h2>
+          </div>
+          <div className="flex items-center space-x-2">
+            {currentSession && isStreaming && (
+              <Form method="post">
+                <input type="hidden" name="intent" value="abort" />
                 <input type="hidden" name="sessionId" value={currentSession.id} />
-                <input
-                  type="text"
-                  name="message"
-                  placeholder="Type your message..."
-                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 text-gray-900"
-                  disabled={isSubmitting || isStreaming}
-                  autoComplete="off"
-                />
                 <button
                   type="submit"
-                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled={isSubmitting || isStreaming}
+                  className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition-colors text-xs"
                 >
-                  {isSubmitting ? 'Sending...' : 'Send'}
+                  Stop
                 </button>
               </Form>
-            </div>
-          </>
-        ) : (
-          <div className="flex-1 flex items-center justify-center text-gray-500">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold mb-2">Welcome to OpenCode Chat</h2>
-              <p>Create a new chat or select one from the sidebar</p>
-            </div>
+            )}
+            <button
+              onClick={() => setIsChatMinimized(!isChatMinimized)}
+              className="p-1 hover:bg-blue-800 rounded"
+              title={isChatMinimized ? 'Maximize' : 'Minimize'}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {isChatMinimized ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                )}
+              </svg>
+            </button>
           </div>
+        </div>
+
+        {!isChatMinimized && (
+          <>
+            {currentSession ? (
+              <>
+                {/* Messages */}
+                <div className="flex-1 overflow-y-auto p-4 space-y-3" style={{ maxHeight: 'calc(100% - 140px)' }}>
+                  {messages.map((msg) => (
+                    <div
+                      key={msg.info.id}
+                      className={`flex ${msg.info.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div
+                        className={`max-w-md px-3 py-2 rounded-lg text-sm ${
+                          msg.info.role === 'user'
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-gray-100 border border-gray-200 text-gray-900'
+                        }`}
+                      >
+                        {msg.parts.map((part, idx) => {
+                          if (part.type === 'text') {
+                            return (
+                              <div key={idx} className="whitespace-pre-wrap">
+                                {part.text}
+                              </div>
+                            );
+                          }
+                          if (part.type === 'tool') {
+                            return (
+                              <details key={idx} className="mt-2 text-xs opacity-75">
+                                <summary className="cursor-pointer">Used tool: {part.name}</summary>
+                                <pre className="mt-2 text-xs overflow-auto">
+                                  {JSON.stringify(part.input, null, 2)}
+                                </pre>
+                              </details>
+                            );
+                          }
+                          return null;
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                  {isStreaming && (
+                    <div className="flex justify-start">
+                      <div className="bg-gray-100 border border-gray-200 text-gray-900 px-3 py-2 rounded-lg">
+                        <div className="flex space-x-2">
+                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  <div ref={messagesEndRef} />
+                </div>
+
+                {/* Message Input */}
+                <div className="border-t border-gray-200 p-3 bg-white rounded-b-lg">
+                  <Form method="post" className="flex space-x-2">
+                    <input type="hidden" name="intent" value="send-message" />
+                    <input type="hidden" name="sessionId" value={currentSession.id} />
+                    <input
+                      type="text"
+                      name="message"
+                      placeholder="Type your message..."
+                      className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 text-gray-900"
+                      disabled={isSubmitting || isStreaming}
+                      autoComplete="off"
+                    />
+                    <button
+                      type="submit"
+                      className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      disabled={isSubmitting || isStreaming}
+                    >
+                      {isSubmitting ? 'Sending...' : 'Send'}
+                    </button>
+                  </Form>
+                </div>
+              </>
+            ) : (
+              <div className="flex-1 flex items-center justify-center text-gray-500 p-4">
+                <div className="text-center">
+                  <h3 className="text-lg font-bold mb-2">Welcome to OpenCode Chat</h3>
+                  <p className="text-sm">Create a new chat or select one from the sidebar</p>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
