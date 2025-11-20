@@ -8,11 +8,18 @@ services:
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
     volumes:
       - workspace-data:/workspace
-    ports:
-      - "4096:4096"
+    # Port exposed internally only - Traefik handles external routing
+    expose:
+      - "4096"
     networks:
       - dokploy-network
     restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.opencode-server.rule=Host(`opencode.yourdomain.com`)"
+      - "traefik.http.routers.opencode-server.entrypoints=websecure"
+      - "traefik.http.routers.opencode-server.tls.certResolver=letsencrypt"
+      - "traefik.http.services.opencode-server.loadbalancer.server.port=4096"
 
   preview:
     build:
@@ -21,8 +28,9 @@ services:
     container_name: preview
     volumes:
       - workspace-data:/usr/share/nginx/html:ro
-    ports:
-      - "8080:80"
+    # Port exposed internally only - Traefik handles external routing
+    expose:
+      - "80"
     networks:
       - dokploy-network
     restart: unless-stopped
@@ -62,8 +70,9 @@ services:
       dockerfile: Dockerfile
     container_name: api
     restart: always
-    ports:
-      - "9999:9999"
+    # Port exposed internally only - Traefik handles external routing
+    expose:
+      - "9999"
     environment:
       - NODE_ENV=production
       - PORT=9999
@@ -103,8 +112,9 @@ services:
         - VITE_API_URL=${VITE_API_URL:-http://localhost:9999}
     container_name: web
     restart: always
-    ports:
-      - "3000:3000"
+    # Port exposed internally only - Traefik handles external routing
+    expose:
+      - "3000"
     environment:
       - API_URL=http://api:9999
     networks:
